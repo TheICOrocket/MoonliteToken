@@ -91,7 +91,7 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
         address adv3,
         address adv4)
     Crowdsale(
-        startTimeNumber, // 2018-02-01T00:00:00+00:00 - 1517443200
+        now + 5, // 2018-02-01T00:00:00+00:00 - 1517443200
         endTimeNumber, // 2018-08-01T00:00:00+00:00 - 
         1000,/* start rate - 1000 */
         _admin
