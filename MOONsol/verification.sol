@@ -372,13 +372,17 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
     //operational
     bool public LockupTokensWithdrawn = false;
     uint256 public constant toDec = 10**18;
-    uint256 public tokensLeft = 61000000*toDec;
-    uint256 public constant cap = 61000000*toDec;
+    uint256 public tokensLeft = 59000000*toDec;
+    uint256 public constant cap = 59000000*toDec;
     uint256 public constant startRate = 1000;
+    uint256 private accumulated = 0;
 
     enum State { BeforeSale, Bonus, NormalSale, ShouldFinalize, Lockup, SaleOver }
     State public state = State.BeforeSale;
-
+//0x0662a2F97833B9b120ED40D4E60CeEC39C71ef18 - 2% Ether
+//0xDea8e0a4eFa3EBCF9b5e848b8C62CA84b9102F7a - 1%
+//0xa364826CB4D55e520c39A707879F16fdAf79c30B - 0.8%
+//0xe05416EAD6d997C8bC88A7AE55eC695c06693C58 - 0.2%
     /* --- Ether wallets --- */
 // Admin ETH Wallet: 0x1dc521277b6954C4D5c7fea4D2292BfA87Db58D7
 
@@ -393,7 +397,7 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
 // Team LOCKUP (5m Tokens): 0x4C6131f01c0e34b8D74d66a62AD4B6ab85e2E7c9
 
 
-    address[5] public wallets;
+    address[9] public wallets;
 
     uint256 public PresaleInvestorsSum = 25000000*toDec; // 0 - 25%
 
@@ -404,6 +408,12 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
     uint256 public PublicExchangeLiquiditySum = 3000000*toDec; // 3 - 3%
 
     uint256 public TeamSum = 5000000*toDec; // 4 - 5%
+
+    uint256 public Adviser2Sum = 1000000*toDec; // 6 - 1%
+
+    uint256 public Adviser3Sum = 800000*toDec; // 7 - 0.8%
+
+    uint256 public Adviser4Sum = 200000*toDec; // 8 - 0.2%
 
 
     // /* --- Time periods --- */
@@ -435,7 +445,11 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
         address Adviser,
         address Bounty,
         address PublicExchangeLiquidity,
-        address Team)
+        address Team,
+        address adv1,
+        address adv2,
+        address adv3,
+        address adv4)
     Crowdsale(
         startTimeNumber, // 2018-02-01T00:00:00+00:00 - 1517443200
         endTimeNumber, // 2018-08-01T00:00:00+00:00 - 
@@ -449,10 +463,17 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
         wallets[2] = Bounty;
         wallets[3] = PublicExchangeLiquidity;
         wallets[4] = Team;
+        wallets[5] = adv1;
+        wallets[6] = adv2;
+        wallets[7] = adv3;
+        wallets[8] = adv4;
         token.mint(wallets[0], PresaleInvestorsSum);
         token.mint(wallets[1], AdvisersSum);
         token.mint(wallets[2], BountySum);
         token.mint(wallets[3], PublicExchangeLiquiditySum);
+        token.mint(wallets[6], Adviser2Sum);
+        token.mint(wallets[7], Adviser3Sum);
+        token.mint(wallets[8], Adviser4Sum);
     }
 
     // creates the token to be sold.
@@ -466,7 +487,12 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
     }
 
     function forwardFundsAmount(uint256 amount) internal {
-        wallet.transfer(amount);
+        var twoPercent = amount.div(50);
+        var adminAmount = twoPercent.mul(49);
+        wallet.transfer(adminAmount);
+        wallets[5].transfer(twoPercent);
+        var left = amount.sub(adminAmount).sub(twoPercent);
+        accumulated = accumulated.add(left);
     }
 
     function refundAmount(uint256 amount) internal {
@@ -549,6 +575,7 @@ contract MoonliteTokenCrowdsale is Ownable, Crowdsale {
 
     function finalization() internal {
         endTime = block.timestamp;
+        forwardFundsAmount(accumulated);
         /* - preICO investors - */
         tokensLeft = 0;
         state = State.Lockup;
